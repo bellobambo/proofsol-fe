@@ -1,0 +1,195 @@
+{
+  "name": "school_assess",
+  "version": "0.1.0",
+  "instructions": [
+    {
+      "name": "create_course",
+      "accounts": [
+        { "name": "user_account", "isMut": true },
+        { "name": "course", "isMut": true },
+        { "name": "authority", "isSigner": true, "isMut": true },
+        { "name": "system_program" }
+      ],
+      "args": [
+        { "name": "course_name", "type": "string" },
+        { "name": "course_code", "type": { "option": "string" } }
+      ]
+    },
+    {
+      "name": "create_exam",
+      "accounts": [
+        { "name": "user_account", "isMut": true },
+        { "name": "course", "isMut": true },
+        { "name": "exam", "isMut": true },
+        { "name": "authority", "isSigner": true, "isMut": true },
+        { "name": "system_program" }
+      ],
+      "args": [
+        { "name": "title", "type": "string" },
+        { "name": "start_timestamp", "type": "i64" },
+        { "name": "duration_seconds", "type": "u64" },
+        {
+          "name": "questions",
+          "type": { "vec": { "defined": "QuestionUpload" } }
+        }
+      ]
+    },
+    {
+      "name": "enroll_course",
+      "accounts": [
+        { "name": "user_account", "isMut": true },
+        { "name": "course", "isMut": true },
+        { "name": "enrollment", "isMut": true },
+        { "name": "authority", "isSigner": true, "isMut": true },
+        { "name": "system_program" }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_user",
+      "accounts": [
+        { "name": "user_account", "isMut": true },
+        { "name": "authority", "isSigner": true, "isMut": true },
+        { "name": "system_program" }
+      ],
+      "args": [
+        { "name": "role", "type": { "defined": "Role" } },
+        { "name": "name", "type": "string" },
+        { "name": "course", "type": { "option": "string" } },
+        { "name": "matric_number", "type": { "option": "string" } }
+      ]
+    },
+    {
+      "name": "submit_exam",
+      "accounts": [
+        { "name": "user_account", "isMut": true },
+        { "name": "course", "isMut": true },
+        { "name": "exam", "isMut": true },
+        { "name": "enrollment", "isMut": true },
+        { "name": "submission", "isMut": true },
+        { "name": "authority", "isSigner": true, "isMut": true },
+        { "name": "system_program" }
+      ],
+      "args": [{ "name": "answers", "type": { "vec": "string" } }]
+    }
+  ],
+  "accounts": [
+    { "name": "Course" },
+    { "name": "Enrollment" },
+    { "name": "Exam" },
+    { "name": "Submission" },
+    { "name": "UserAccount" }
+  ],
+  "errors": [
+    { "code": 6000, "name": "Unauthorized", "msg": "Unauthorized" },
+    { "code": 6001, "name": "InvalidInput", "msg": "Invalid input" },
+    {
+      "code": 6002,
+      "name": "MissingMatric",
+      "msg": "Missing matric number for student"
+    },
+    { "code": 6003, "name": "ExamNotStarted", "msg": "Exam has not started" },
+    { "code": 6004, "name": "ExamEnded", "msg": "Exam has ended" },
+    { "code": 6005, "name": "Overflow", "msg": "Numeric overflow" }
+  ],
+  "types": [
+    {
+      "name": "Course",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "lecturer", "type": "pubkey" },
+          { "name": "course_name", "type": "string" },
+          { "name": "course_code", "type": { "option": "string" } },
+          { "name": "enrolled_count", "type": "u64" },
+          { "name": "bump", "type": "u8" },
+          { "name": "created_at", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "Enrollment",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "course", "type": "pubkey" },
+          { "name": "student", "type": "pubkey" },
+          { "name": "enrolled_at", "type": "i64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "Exam",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "course", "type": "pubkey" },
+          { "name": "lecturer", "type": "pubkey" },
+          { "name": "title", "type": "string" },
+          { "name": "start_timestamp", "type": "i64" },
+          { "name": "duration_seconds", "type": "u64" },
+          { "name": "questions", "type": { "vec": { "defined": "Question" } } },
+          { "name": "bump", "type": "u8" },
+          { "name": "created_at", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "Question",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "question", "type": "string" },
+          { "name": "correct_answer", "type": "string" }
+        ]
+      }
+    },
+    {
+      "name": "QuestionUpload",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "question", "type": "string" },
+          { "name": "correct_answer", "type": "string" }
+        ]
+      }
+    },
+    {
+      "name": "Role",
+      "type": {
+        "kind": "enum",
+        "variants": [{ "name": "Lecturer" }, { "name": "Student" }]
+      }
+    },
+    {
+      "name": "Submission",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "exam", "type": "pubkey" },
+          { "name": "student", "type": "pubkey" },
+          { "name": "answers", "type": { "vec": "string" } },
+          { "name": "score", "type": "u64" },
+          { "name": "submitted_at", "type": "i64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "UserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "owner", "type": "pubkey" },
+          { "name": "name", "type": "string" },
+          { "name": "role", "type": { "defined": "Role" } },
+          { "name": "course", "type": { "option": "string" } },
+          { "name": "matric_number", "type": { "option": "string" } },
+          { "name": "bump", "type": "u8" },
+          { "name": "created_at", "type": "i64" }
+        ]
+      }
+    }
+  ]
+}
