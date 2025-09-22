@@ -21,10 +21,10 @@ export const useAnchorProgram = () => {
     });
   }, [connection, wallet]);
 
-  const program = useMemo(() => {
+  const getProgram = useMemo(() => {
     if (!provider) return null;
     return new Program(IDL, PROGRAM_ID, provider);
   }, [provider]);
 
-  return { provider, program, publicKey: wallet.publicKey };
+  return { provider, getProgram, publicKey: wallet.publicKey };
 };
