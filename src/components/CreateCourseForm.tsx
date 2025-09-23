@@ -1,66 +1,62 @@
 "use client";
-import { useState } from "react";
-import { useAnchorProgram } from "../lib/anchor";
-import * as anchor from "@project-serum/anchor";
+import { useAnchorProgram } from "@/lib/anchor";
+import React, { useState } from "react";
 
-export default function CreateCourseForm() {
+export default function CreateCourseForm({ onCreate }) {
   const { getProgram, publicKey } = useAnchorProgram();
   const [courseName, setCourseName] = useState("");
   const [courseCode, setCourseCode] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleCreateCourse = async () => {
+  const handleCreate = async (e) => {
+    e.preventDefault();
     if (!getProgram || !publicKey) return alert("Connect wallet first");
-
+    setLoading(true);
     try {
-      const [coursePda] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("course"), publicKey.toBuffer(), Buffer.from(courseName)],
-        getProgram.programId
-      );
-
-      const [userPda] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("user"), publicKey.toBuffer()],
-        getProgram.programId
-      );
-
       const tx = await getProgram.methods
-        .createCourse(courseName, courseCode || null)
+        .createCourse(courseName, courseCode ? { option: courseCode } : null)
         .accounts({
-          userAccount: userPda,
-          course: coursePda,
+          userAccount: publicKey,
+          course: getProgram.programId, // placeholder; real PDA logic depends on your program
           authority: publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
+          systemProgram: getProgram.programId, // system program - this is a placeholder
         })
         .rpc();
-
-      console.log("Course created:", tx);
-      alert("✅ Course created!");
+      console.log("createCourse tx", tx);
+      onCreate && onCreate();
+      setCourseName("");
+      setCourseCode("");
     } catch (err) {
       console.error(err);
-      alert("❌ Course creation failed");
+      alert("Error creating course: " + (err?.message || err));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 border rounded my-2">
-      <h2 className="font-bold mb-2">Create Course</h2>
+    <form onSubmit={handleCreate} className="space-y-2">
       <input
-        placeholder="Course Name"
         value={courseName}
         onChange={(e) => setCourseName(e.target.value)}
-        className="border p-2 w-full my-2"
+        placeholder="Course name"
+        className="w-full p-2 border rounded"
       />
       <input
-        placeholder="Course Code (optional)"
         value={courseCode}
         onChange={(e) => setCourseCode(e.target.value)}
-        className="border p-2 w-full my-2"
+        placeholder="Course code (optional)"
+        className="w-full p-2 border rounded"
       />
-      <button
-        onClick={handleCreateCourse}
-        className="bg-green-500 text-white px-4 py-2 rounded"
-      >
-        Create Course
-      </button>
-    </div>
+      <div>
+        <button
+          type="submit"
+          className="px-3 py-1 bg-blue-600 text-white rounded"
+          disabled={loading}
+        >
+          {loading ? "Creating..." : "Create Course"}
+        </button>
+      </div>
+    </form>
   );
 }

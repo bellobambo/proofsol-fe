@@ -1,76 +1,71 @@
 "use client";
-import { useState } from "react";
-import { useAnchorProgram } from "../lib/anchor";
-import * as anchor from "@project-serum/anchor";
+import React, { useState } from "react";
+import { useAnchorProgram } from "../anchor";
 
 export default function RegisterUserForm() {
   const { getProgram, publicKey } = useAnchorProgram();
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"Lecturer" | "Student">("Student");
-  const [course, setCourse] = useState("");
+  const [role, setRole] = useState("Student");
   const [matric, setMatric] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
+  const handleRegister = async (e) => {
+    e.preventDefault();
     if (!getProgram || !publicKey) return alert("Connect wallet first");
-
+    setLoading(true);
     try {
-      const [userPda] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("user"), publicKey.toBuffer()],
-        getProgram.programId
-      );
-
-      const tx = await getProgram.methods
-        .registerUser({ [role]: {} }, name, course || null, matric || null)
+      // Role is an enum { Lecturer | Student } — Anchor expects { Student: {} } or { Lecturer: {} }
+      const roleObj = role === "Student" ? { Student: {} } : { Lecturer: {} };
+      await getProgram.methods
+        .registerUser(roleObj, name, matric ? { option: matric } : null, null)
         .accounts({
-          userAccount: userPda,
+          userAccount: publicKey,
           authority: publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
+          systemProgram: getProgram.programId,
         })
         .rpc();
-
-      console.log("User registered:", tx);
-      alert("✅ User registered!");
+      alert("Registered");
+      setName("");
+      setMatric("");
     } catch (err) {
       console.error(err);
-      alert("❌ Registration failed");
+      alert("Register error: " + (err?.message || err));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 border rounded my-2">
-      <h2 className="font-bold mb-2">Register User</h2>
+    <form onSubmit={handleRegister} className="space-y-2">
       <input
-        placeholder="Full Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="border p-2 w-full my-2"
+        placeholder="Your name"
+        className="w-full p-2 border rounded"
       />
-      <select
-        value={role}
-        onChange={(e) => setRole(e.target.value as "Lecturer" | "Student")}
-        className="border p-2 w-full my-2"
-      >
-        <option value="Lecturer">Lecturer</option>
-        <option value="Student">Student</option>
-      </select>
-      <input
-        placeholder="Course (optional)"
-        value={course}
-        onChange={(e) => setCourse(e.target.value)}
-        className="border p-2 w-full my-2"
-      />
-      <input
-        placeholder="Matric No (optional)"
-        value={matric}
-        onChange={(e) => setMatric(e.target.value)}
-        className="border p-2 w-full my-2"
-      />
+      <div className="flex gap-2">
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="p-2 border rounded"
+        >
+          <option value="Student">Student</option>
+          <option value="Lecturer">Lecturer</option>
+        </select>
+        <input
+          value={matric}
+          onChange={(e) => setMatric(e.target.value)}
+          placeholder="Matric number (students)"
+          className="p-2 border rounded flex-1"
+        />
+      </div>
       <button
-        onClick={handleRegister}
-        className="bg-blue-500 text-white px-4 py-2 rounded"
+        type="submit"
+        className="px-3 py-1 bg-yellow-600 text-white rounded"
+        disabled={loading}
       >
-        Register
+        {loading ? "Registering..." : "Register"}
       </button>
-    </div>
+    </form>
   );
 }

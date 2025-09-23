@@ -3,20 +3,20 @@ import { useEffect, useState } from "react";
 import { useAnchorProgram } from "../lib/anchor";
 
 export function useCourses() {
-  const program = useAnchorProgram();
+  const { getProgram } = useAnchorProgram();
   const [courses, setCourses] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!program) return;
+    if (!getProgram) return;
     (async () => {
       try {
-        const allCourses = await program.account.course.all();
+        const allCourses = await getProgram.account.course.all();
         setCourses(allCourses);
       } catch (err) {
         console.error("Error fetching courses:", err);
       }
     })();
-  }, [program]);
+  }, [getProgram]);
 
   return courses;
 }

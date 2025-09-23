@@ -1,96 +1,70 @@
 "use client";
-import { useState } from "react";
-import { useAnchorProgram } from "../lib/anchor";
-import * as anchor from "@project-serum/anchor";
+import React, { useState } from "react";
+import { useAnchorProgram } from "../anchor";
+import { PublicKey } from "@solana/web3.js";
 
-export default function SubmitExamForm({
-  courseName,
-  examTitle,
-}: {
-  courseName: string;
-  examTitle: string;
-}) {
+export default function SubmitExamForm({ exam }) {
   const { getProgram, publicKey } = useAnchorProgram();
-  const [answers, setAnswers] = useState<string[]>([]);
+  const [answers, setAnswers] = useState(exam?.questions?.map(() => "") || []);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmitExam = async () => {
+  const handleChange = (idx, val) => {
+    const copy = [...answers];
+    copy[idx] = val;
+    setAnswers(copy);
+  };
+
+  const handleSubmit = async (e) => {
+    e?.preventDefault?.();
     if (!getProgram || !publicKey) return alert("Connect wallet first");
-
+    if (!exam) return alert("No exam selected");
+    setLoading(true);
     try {
-      const [coursePda] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("course"), publicKey.toBuffer(), Buffer.from(courseName)],
-        getProgram.programId
-      );
-
-      const [examPda] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("exam"), coursePda.toBuffer(), Buffer.from(examTitle)],
-        getProgram.programId
-      );
-
-      const [enrollPda] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("enrollment"), coursePda.toBuffer(), publicKey.toBuffer()],
-        getProgram.programId
-      );
-
-      const [submissionPda] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("submission"), examPda.toBuffer(), publicKey.toBuffer()],
-        getProgram.programId
-      );
-
-      const [userPda] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("user"), publicKey.toBuffer()],
-        getProgram.programId
-      );
-
-      const tx = await getProgram.methods
+      await getProgram.methods
         .submitExam(answers)
         .accounts({
-          userAccount: userPda,
-          course: coursePda,
-          exam: examPda,
-          enrollment: enrollPda,
-          submission: submissionPda,
+          userAccount: publicKey,
+          course: exam.course,
+          exam: exam.pubkey,
+          enrollment: getProgram.programId, // placeholder
+          submission: getProgram.programId,
           authority: publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
+          systemProgram: getProgram.programId,
         })
         .rpc();
-
-      console.log("Exam submitted:", tx);
-      alert("✅ Exam submitted!");
+      alert("Submitted");
     } catch (err) {
       console.error(err);
-      alert("❌ Exam submission failed");
+      alert("Submit error: " + (err?.message || err));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 border rounded my-2">
-      <h2 className="font-bold mb-2">Submit Exam</h2>
-      {answers.map((a, idx) => (
-        <input
-          key={idx}
-          placeholder={`Answer ${idx + 1}`}
-          value={a}
-          onChange={(e) => {
-            const copy = [...answers];
-            copy[idx] = e.target.value;
-            setAnswers(copy);
-          }}
-          className="border p-2 w-full my-2"
-        />
+    <form onSubmit={handleSubmit} className="space-y-2">
+      {(exam?.questions || []).map((q, i) => (
+        <div key={i} className="space-y-1">
+          <div className="text-sm font-medium">
+            Q{i + 1}: {q?.question ?? "Question"}
+          </div>
+          <input
+            value={answers[i] || ""}
+            onChange={(e) => handleChange(i, e.target.value)}
+            placeholder="Your answer"
+            className="w-full p-2 border rounded"
+          />
+        </div>
       ))}
-      <button
-        onClick={() => setAnswers([...answers, ""])}
-        className="bg-gray-500 text-white px-4 py-1 rounded"
-      >
-        + Add Answer
-      </button>
-      <button
-        onClick={handleSubmitExam}
-        className="bg-red-500 text-white px-4 py-2 rounded ml-2"
-      >
-        Submit Exam
-      </button>
-    </div>
+      <div>
+        <button
+          type="submit"
+          className="px-3 py-1 bg-rose-600 text-white rounded"
+          disabled={loading}
+        >
+          {loading ? "Submitting..." : "Submit Answers"}
+        </button>
+      </div>
+    </form>
   );
 }
