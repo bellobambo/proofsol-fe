@@ -2,13 +2,13 @@
 import { useAnchorProgram } from "@/lib/anchor";
 import React, { useState } from "react";
 
-export default function CreateCourseForm({ onCreate }) {
+export default function CreateCourseForm({ onCreate } : any) {
   const { getProgram, publicKey } = useAnchorProgram();
   const [courseName, setCourseName] = useState("");
   const [courseCode, setCourseCode] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleCreate = async (e) => {
+  const handleCreate = async (e : any) => {
     e.preventDefault();
     if (!getProgram || !publicKey) return alert("Connect wallet first");
     setLoading(true);
@@ -26,7 +26,7 @@ export default function CreateCourseForm({ onCreate }) {
       onCreate && onCreate();
       setCourseName("");
       setCourseCode("");
-    } catch (err) {
+    } catch (err : any) {
       console.error(err);
       alert("Error creating course: " + (err?.message || err));
     } finally {

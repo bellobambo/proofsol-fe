@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode, useMemo } from "react";
+import React, { ReactNode, useEffect, useMemo, useState } from "react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import {
   ConnectionProvider,
@@ -15,9 +15,21 @@ import { clusterApiUrl } from "@solana/web3.js";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 const WalletContextProvider = ({ children }: { children: ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []); // ensures hydration is complete
+
   const network = WalletAdapterNetwork.Devnet;
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-  const wallets = useMemo(() => [new PhantomWalletAdapter()], [network]);
+
+  const wallets = useMemo(
+    () => (typeof window !== "undefined" ? [new PhantomWalletAdapter()] : []),
+    [network]
+  );
+
+  if (!mounted) {
+    // Prevent mismatch by rendering a skeleton until mounted
+    return <div className="min-h-screen bg-white">Loading...</div>;
+  }
 
   return (
     <ConnectionProvider endpoint={endpoint}>

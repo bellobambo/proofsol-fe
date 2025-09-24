@@ -1,16 +1,17 @@
 "use client";
 import React, { useState } from "react";
-import { useAnchorProgram } from "../anchor";
+// import { useAnchorProgram } from "../anchor";
 import { PublicKey } from "@solana/web3.js";
-import * as anchor from "@coral-xyz/anchor";
+import * as anchor from "@project-serum/anchor";
+import { useAnchorProgram } from "@/lib/anchor";
 
-export default function CreateExamForm({ courses = [], onCreate }) {
+export default function CreateExamForm({ courses = [], onCreate  } : any) {
   const { getProgram, publicKey } = useAnchorProgram();
   const [coursePubkey, setCoursePubkey] = useState("");
   const [title, setTitle] = useState("");
   const [startTs, setStartTs] = useState("");
   const [duration, setDuration] = useState(3600);
-  const [questions, setQuestions] = useState([
+  const [questions, setQuestions] = useState<any>([
     { question: "", correct_answer: "" },
   ]);
   const [loading, setLoading] = useState(false);
@@ -18,13 +19,13 @@ export default function CreateExamForm({ courses = [], onCreate }) {
   const addQuestion = () =>
     setQuestions([...questions, { question: "", correct_answer: "" }]);
 
-  const updateQuestion = (idx, key, val) => {
+  const updateQuestion = (idx : any, key : any, val : any) => {
     const copy = [...questions];
     copy[idx][key] = val;
     setQuestions(copy);
   };
 
-  const handleCreate = async (e) => {
+  const handleCreate = async (e : any) => {
     e.preventDefault();
     if (!getProgram || !publicKey) return alert("Connect wallet first");
     if (!coursePubkey) return alert("Select course");
@@ -32,7 +33,7 @@ export default function CreateExamForm({ courses = [], onCreate }) {
     try {
       const parsedStart = Math.floor(new Date(startTs).getTime() / 1000);
       // build the QuestionUpload vector
-      const qs = questions.map((q) => ({
+      const qs = questions.map((q : any) => ({
         question: q.question,
         correctAnswer: q.correct_answer,
       }));
@@ -57,7 +58,7 @@ export default function CreateExamForm({ courses = [], onCreate }) {
       onCreate && onCreate();
       setTitle("");
       setQuestions([{ question: "", correct_answer: "" }]);
-    } catch (err) {
+    } catch (err : any) {
       console.error(err);
       alert("Error creating exam: " + (err?.message || err));
     } finally {
@@ -74,7 +75,7 @@ export default function CreateExamForm({ courses = [], onCreate }) {
           className="flex-1 p-2 border rounded"
         >
           <option value="">Select course</option>
-          {courses.map((c) => (
+          {courses.map((c : any) => (
             <option key={c.pubkey.toBase58()} value={c.pubkey.toBase58()}>
               {c.courseName ?? c.course_name ?? "Unnamed Course"}
             </option>
@@ -116,7 +117,7 @@ export default function CreateExamForm({ courses = [], onCreate }) {
             Add Question
           </button>
         </div>
-        {questions.map((q, idx) => (
+        {questions.map((q : any, idx : any) => (
           <div key={idx} className="border p-3 rounded mb-2">
             <input
               value={q.question}

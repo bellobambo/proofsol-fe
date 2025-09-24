@@ -1,9 +1,10 @@
 "use client";
 import React, { useState } from "react";
-import { useAnchorProgram } from "../anchor";
+// import { useAnchorProgram } from "../anchor";
 import { PublicKey } from "@solana/web3.js";
+import { useAnchorProgram } from "@/lib/anchor";
 
-export default function EnrollButton({ course, onEnrolled }) {
+export default function EnrollButton({ course, onEnrolled } : any) {
   const { getProgram, publicKey } = useAnchorProgram();
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +24,7 @@ export default function EnrollButton({ course, onEnrolled }) {
         .rpc();
       alert("Enrolled (tx submitted)");
       onEnrolled && onEnrolled();
-    } catch (err) {
+    } catch (err : any) {
       console.error(err);
       alert("Enroll error: " + (err?.message || err));
     } finally {

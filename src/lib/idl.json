@@ -1,6 +1,6 @@
 {
-  "name": "school_assess",
   "version": "0.1.0",
+  "name": "school_assess",
   "instructions": [
     {
       "name": "create_course",

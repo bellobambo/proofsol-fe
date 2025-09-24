@@ -2,39 +2,42 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { PublicKey } from "@solana/web3.js";
-import { useAnchorProgram } from "@/lib/anchor";
+// import { useAnchorProgram } from "@/lib/anchor";
 import CreateCourseForm from "@/components/CreateCourseForm";
 import CreateExamForm from "@/components/CreateExamForm";
 import CourseList from "@/components/CourseList";
 import RegisterUserForm from "@/components/RegisterUserForm";
 import EnrollButton from "@/components/EnrollButton";
 import SubmitExamForm from "@/components/SubmitExamForm";
+import { useAnchorProgram } from "@/lib/anchor";
 
 export default function Home() {
-  const { getProgram, publicKey } = useAnchorProgram();
+  const { program, publicKey } = useAnchorProgram();
   const [courses, setCourses] = useState<any>([]);
   const [exams, setExams] = useState<any>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchCourses = async () => {
-    if (!getProgram) return;
-    setLoading(true);
-    try {
-      const accounts = await getProgram.account.course.all();
-      // shape the accounts
-      const cs = accounts.map((a) => ({ pubkey: a.publicKey, ...a.account }));
-      setCourses(cs);
-    } catch (e) {
-      console.error("fetchCourses", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchCourses = async () => {
+  if (!program) return;
+  setLoading(true);
+  try {
+    const accounts = await program.account.course.all();
+    const cs = accounts.map((a) => ({ pubkey: a.publicKey, ...a.account }));
+    setCourses(cs);
+  } catch (e) {
+    console.error("fetchCourses", e);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
 
   const fetchExams = async () => {
-    if (!getProgram) return;
+    if (!program) return;
     try {
-      const accounts = await getProgram.account.exam.all();
+      const accounts = await program.account.exam.all();
       const es = accounts.map((a) => ({ pubkey: a.publicKey, ...a.account }));
       setExams(es);
     } catch (e) {
@@ -43,10 +46,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (!getProgram) return;
+    if (!program) return;
     fetchCourses();
     fetchExams();
-  }, [getProgram]);
+  }, [program]);
 
   return (
     <div className="min-h-screen p-6 bg-slate-50">

@@ -1,20 +1,20 @@
 "use client";
 import React, { useState } from "react";
-import { useAnchorProgram } from "../anchor";
 import { PublicKey } from "@solana/web3.js";
+import { useAnchorProgram } from "@/lib/anchor";
 
-export default function SubmitExamForm({ exam }) {
+export default function SubmitExamForm({ exam } : any) {
   const { getProgram, publicKey } = useAnchorProgram();
   const [answers, setAnswers] = useState(exam?.questions?.map(() => "") || []);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (idx, val) => {
+  const handleChange = (idx : any, val : any) => {
     const copy = [...answers];
     copy[idx] = val;
     setAnswers(copy);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e : any) => {
     e?.preventDefault?.();
     if (!getProgram || !publicKey) return alert("Connect wallet first");
     if (!exam) return alert("No exam selected");
@@ -33,7 +33,7 @@ export default function SubmitExamForm({ exam }) {
         })
         .rpc();
       alert("Submitted");
-    } catch (err) {
+    } catch (err : any) {
       console.error(err);
       alert("Submit error: " + (err?.message || err));
     } finally {
@@ -43,7 +43,7 @@ export default function SubmitExamForm({ exam }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      {(exam?.questions || []).map((q, i) => (
+      {(exam?.questions || []).map((q : any, i : any) => (
         <div key={i} className="space-y-1">
           <div className="text-sm font-medium">
             Q{i + 1}: {q?.question ?? "Question"}

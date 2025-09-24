@@ -1,6 +1,7 @@
 "use client";
+import { useAnchorProgram } from "@/lib/anchor";
 import React, { useState } from "react";
-import { useAnchorProgram } from "../anchor";
+// import { useAnchorProgram } from "../anchor";
 
 export default function RegisterUserForm() {
   const { getProgram, publicKey } = useAnchorProgram();
@@ -9,7 +10,7 @@ export default function RegisterUserForm() {
   const [matric, setMatric] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async (e) => {
+  const handleRegister = async (e : any) => {
     e.preventDefault();
     if (!getProgram || !publicKey) return alert("Connect wallet first");
     setLoading(true);
@@ -27,7 +28,7 @@ export default function RegisterUserForm() {
       alert("Registered");
       setName("");
       setMatric("");
-    } catch (err) {
+    } catch (err : any) {
       console.error(err);
       alert("Register error: " + (err?.message || err));
     } finally {
