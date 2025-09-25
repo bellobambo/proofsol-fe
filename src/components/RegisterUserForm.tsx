@@ -1,35 +1,56 @@
 "use client";
 import { useAnchorProgram } from "@/lib/anchor";
 import React, { useState } from "react";
-// import { useAnchorProgram } from "../anchor";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 
 export default function RegisterUserForm() {
-  const { getProgram, publicKey } = useAnchorProgram();
+  const { program, publicKey } = useAnchorProgram();
   const [name, setName] = useState("");
   const [role, setRole] = useState("Student");
   const [matric, setMatric] = useState("");
+  const [course, setCourse] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async (e : any) => {
+  const handleRegister = async (e: any) => {
     e.preventDefault();
-    if (!getProgram || !publicKey) return alert("Connect wallet first");
+    if (!program || !publicKey) return alert("Connect wallet first");
     setLoading(true);
+
     try {
-      // Role is an enum { Lecturer | Student } — Anchor expects { Student: {} } or { Lecturer: {} }
-      const roleObj = role === "Student" ? { Student: {} } : { Lecturer: {} };
-      await getProgram.methods
-        .registerUser(roleObj, name, matric ? { option: matric } : null, null)
+      const [userAccountPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user"), publicKey.toBuffer()],
+        program.programId
+      );
+
+      const roleEnum = role === "Student" ? { student: {} } : { lecturer: {} };
+
+      const courseValue = course.trim() !== "" ? course : null;
+      const matricValue =
+        role === "Student" && matric.trim() !== "" ? matric : null;
+
+      console.log("Register payload:", {
+        role: roleEnum,
+        name,
+        course: courseValue,
+        matric_number: matricValue,
+      });
+
+      const tx = await program.methods
+        .registerUser(roleEnum, name, courseValue, matricValue)
         .accounts({
-          userAccount: publicKey,
+          user_account: userAccountPda, // must match IDL
           authority: publicKey,
-          systemProgram: getProgram.programId,
+          system_program: SystemProgram.programId,
         })
         .rpc();
-      alert("Registered");
+
+      console.log("Transaction successful:", tx);
+      alert("Registered ✅");
       setName("");
       setMatric("");
-    } catch (err : any) {
-      console.error(err);
+      setCourse("");
+    } catch (err: any) {
+      console.error("Registration error:", err);
       alert("Register error: " + (err?.message || err));
     } finally {
       setLoading(false);
@@ -43,7 +64,9 @@ export default function RegisterUserForm() {
         onChange={(e) => setName(e.target.value)}
         placeholder="Your name"
         className="w-full p-2 border rounded"
+        required
       />
+
       <div className="flex gap-2">
         <select
           value={role}
@@ -53,13 +76,25 @@ export default function RegisterUserForm() {
           <option value="Student">Student</option>
           <option value="Lecturer">Lecturer</option>
         </select>
-        <input
-          value={matric}
-          onChange={(e) => setMatric(e.target.value)}
-          placeholder="Matric number (students)"
-          className="p-2 border rounded flex-1"
-        />
+
+        {role === "Student" && (
+          <input
+            value={matric}
+            onChange={(e) => setMatric(e.target.value)}
+            placeholder="Matric number"
+            className="p-2 border rounded flex-1"
+            required={role === "Student"}
+          />
+        )}
       </div>
+
+      <input
+        value={course}
+        onChange={(e) => setCourse(e.target.value)}
+        placeholder="Course (optional)"
+        className="w-full p-2 border rounded"
+      />
+
       <button
         type="submit"
         className="px-3 py-1 bg-yellow-600 text-white rounded"

@@ -13,26 +13,26 @@ import { useAnchorProgram } from "@/lib/anchor";
 
 export default function Home() {
   const { program, publicKey } = useAnchorProgram();
+  console.log("program :", program);
+  console.log("publicKey :", publicKey);
+
   const [courses, setCourses] = useState<any>([]);
   const [exams, setExams] = useState<any>([]);
   const [loading, setLoading] = useState(false);
 
- const fetchCourses = async () => {
-  if (!program) return;
-  setLoading(true);
-  try {
-    const accounts = await program.account.course.all();
-    const cs = accounts.map((a) => ({ pubkey: a.publicKey, ...a.account }));
-    setCourses(cs);
-  } catch (e) {
-    console.error("fetchCourses", e);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
+  const fetchCourses = async () => {
+    if (!program) return;
+    setLoading(true);
+    try {
+      const accounts = await program.account.course.all();
+      const cs = accounts.map((a) => ({ pubkey: a.publicKey, ...a.account }));
+      setCourses(cs);
+    } catch (e) {
+      console.error("fetchCourses", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchExams = async () => {
     if (!program) return;
