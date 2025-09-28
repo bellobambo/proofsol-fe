@@ -1,24 +1,44 @@
+// In your Home component
 "use client";
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import { PublicKey } from "@solana/web3.js";
-// import { useAnchorProgram } from "@/lib/anchor";
 import CreateCourseForm from "@/components/CreateCourseForm";
 import CreateExamForm from "@/components/CreateExamForm";
 import CourseList from "@/components/CourseList";
 import RegisterUserForm from "@/components/RegisterUserForm";
-import EnrollButton from "@/components/EnrollButton";
-import SubmitExamForm from "@/components/SubmitExamForm";
 import { useAnchorProgram } from "@/lib/anchor";
 
 export default function Home() {
   const { program, publicKey } = useAnchorProgram();
-  console.log("program :", program);
-  console.log("publicKey :", publicKey);
-
   const [courses, setCourses] = useState<any>([]);
   const [exams, setExams] = useState<any>([]);
+  const [enrollments, setEnrollments] = useState<any>([]);
   const [loading, setLoading] = useState(false);
+  const [userAccount, setUserAccount] = useState<any>(null);
+  const [isCheckingUser, setIsCheckingUser] = useState(false);
+
+  // Fetch user account to check if registered
+  const fetchUserAccount = async () => {
+    if (!program || !publicKey) {
+      setUserAccount(null);
+      return;
+    }
+
+    setIsCheckingUser(true);
+    try {
+      const [userPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user"), publicKey.toBuffer()],
+        program.programId
+      );
+      const account = await program.account.user.fetch(userPda);
+      setUserAccount(account);
+    } catch (error) {
+      console.log("User not registered or account not found");
+      setUserAccount(null);
+    } finally {
+      setIsCheckingUser(false);
+    }
+  };
 
   const fetchCourses = async () => {
     if (!program) return;
@@ -45,46 +65,110 @@ export default function Home() {
     }
   };
 
+ const fetchEnrollments = async () => {
+  if (!program || !publicKey) return;
+  try {
+    const accounts = await program.account.enrollment.all();
+    const userEnrollments = accounts
+      .map((a) => ({ pubkey: a.publicKey, ...a.account }))
+      .filter((e: any) => e.student?.toBase58?.() === publicKey.toBase58()); // Add type annotation
+    setEnrollments(userEnrollments);
+  } catch (e) {
+    console.error("fetchEnrollments", e);
+  }
+};
+
   useEffect(() => {
     if (!program) return;
     fetchCourses();
     fetchExams();
-  }, [program]);
+    if (publicKey) {
+      fetchEnrollments();
+    }
+  }, [program, publicKey]);
+
+  useEffect(() => {
+    fetchUserAccount();
+  }, [program, publicKey]);
+
+  const handleUserRegistered = () => {
+    fetchUserAccount();
+  };
 
   return (
     <div className="min-h-screen p-6 bg-slate-50">
       {loading && (
         <div className="text-sm text-blue-500">Loading courses...</div>
       )}
+      
       <header className="mb-6">
         <h1 className="text-3xl font-bold">School Assess — Frontend</h1>
         <p className="text-sm text-gray-600">
           Connected wallet: {publicKey?.toBase58() ?? "not connected"}
         </p>
+        
+        {publicKey && (
+          <div className="mt-2">
+            {isCheckingUser ? (
+              <p className="text-sm text-blue-500">Checking registration status...</p>
+            ) : userAccount ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-green-600">
+                  ✅ Registered as {userAccount.role?.student ? "Student" : "Lecturer"} - {userAccount.name}
+                </span>
+                {userAccount.matricNumber && (
+                  <span className="text-sm text-gray-600">
+                    (Matric: {userAccount.matricNumber})
+                  </span>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-orange-500">
+                ⚠️ You are not registered. Please register below.
+              </p>
+            )}
+          </div>
+        )}
       </header>
 
       <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="col-span-2 space-y-6">
-          <div className="p-4 bg-white rounded shadow">
-            <h2 className="font-semibold mb-3">Create (lecturer)</h2>
-            <CreateCourseForm onCreate={fetchCourses} />
-            <CreateExamForm courses={courses} onCreate={fetchExams} />
-          </div>
+          {userAccount && !userAccount.role?.student && (
+            <div className="p-4 bg-white rounded shadow">
+              <h2 className="font-semibold mb-3">Create (lecturer)</h2>
+              <CreateCourseForm onCreate={fetchCourses} />
+              <CreateExamForm courses={courses} onCreate={fetchExams} />
+            </div>
+          )}
 
-          <div className="p-4 bg-white rounded shadow">
-            <h2 className="font-semibold mb-3">Register (user)</h2>
-            <RegisterUserForm />
-          </div>
+          {!userAccount && publicKey && (
+            <div className="p-4 bg-white rounded shadow">
+              <h2 className="font-semibold mb-3">Register (user)</h2>
+              <RegisterUserForm onRegistered={handleUserRegistered} />
+            </div>
+          )}
+
+          {!publicKey && (
+            <div className="p-4 bg-white rounded shadow">
+              <h2 className="font-semibold mb-3">Register (user)</h2>
+              <p className="text-sm text-gray-500">
+                Please connect your wallet to register.
+              </p>
+            </div>
+          )}
 
           <div className="p-4 bg-white rounded shadow">
             <h2 className="font-semibold mb-3">Available Courses</h2>
             <CourseList
               courses={courses}
               exams={exams}
+              enrollments={enrollments}
               refresh={() => {
                 fetchCourses();
                 fetchExams();
+                fetchEnrollments();
               }}
+              userAccount={userAccount}
             />
           </div>
         </section>
@@ -101,10 +185,46 @@ export default function Home() {
                   className="border p-3 rounded mb-3"
                 >
                   <div className="text-sm font-medium">{e.title}</div>
+                  {userAccount && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Course: {e.course.toBase58().slice(0, 8)}...
+                    </div>
+                  )}
                 </div>
               ))
             )}
           </div>
+
+          {userAccount && (
+            <div className="p-4 bg-white rounded shadow">
+              <h3 className="font-semibold mb-3">Your Profile</h3>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="font-medium">Name:</span> {userAccount.name}
+                </div>
+                <div>
+                  <span className="font-medium">Role:</span>{" "}
+                  {userAccount.role?.student ? "Student" : "Lecturer"}
+                </div>
+                {userAccount.matricNumber && (
+                  <div>
+                    <span className="font-medium">Matric Number:</span>{" "}
+                    {userAccount.matricNumber}
+                  </div>
+                )}
+                <div>
+                  <span className="font-medium">Wallet:</span>{" "}
+                  {publicKey?.toBase58().slice(0, 8)}...
+                </div>
+                {userAccount.role?.student && enrollments.length > 0 && (
+                  <div>
+                    <span className="font-medium">Enrolled in:</span>{" "}
+                    {enrollments.length} course(s)
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </aside>
       </main>
     </div>

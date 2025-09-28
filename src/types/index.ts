@@ -17,8 +17,18 @@ export interface Exam {
   questions?: Array<{ question: string }>;
 }
 
+// types.ts
 export interface CourseListProps {
-  courses?: Course[];
-  exams?: Exam[];
+  courses: any[];
+  exams: any[];
+  enrollments?: any[];
   refresh: () => void;
+  userAccount?: any;
+}
+
+export interface EnrollButtonProps {
+  course: any;
+  onEnrolled: () => void;
+  userAccount?: any;
+  isEnrolled?: boolean;
 }

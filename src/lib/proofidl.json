@@ -1,0 +1,385 @@
+{
+    "version": "0.1.0",
+    "name": "proofsol",
+    "instructions": [
+        {
+            "name": "registerUser",
+            "accounts": [
+                {
+                    "name": "user",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "authority",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": [
+                {
+                    "name": "role",
+                    "type": {
+                        "defined": "UserRole"
+                    }
+                },
+                {
+                    "name": "name",
+                    "type": "string"
+                },
+                {
+                    "name": "matricNumber",
+                    "type": {
+                        "option": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "createCourse",
+            "accounts": [
+                {
+                    "name": "course",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "lecturer",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": [
+                {
+                    "name": "title",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "createExam",
+            "accounts": [
+                {
+                    "name": "exam",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "lecturer",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "course",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": [
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "date",
+                    "type": "i64"
+                },
+                {
+                    "name": "duration",
+                    "type": "i64"
+                }
+            ]
+        },
+        {
+            "name": "uploadQuestions",
+            "accounts": [
+                {
+                    "name": "qa",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "lecturer",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "exam",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": [
+                {
+                    "name": "questions",
+                    "type": {
+                        "vec": "string"
+                    }
+                },
+                {
+                    "name": "answers",
+                    "type": {
+                        "vec": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "enrollCourse",
+            "accounts": [
+                {
+                    "name": "enrollment",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "student",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "course",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": []
+        },
+        {
+            "name": "submitExam",
+            "accounts": [
+                {
+                    "name": "student",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "exam",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "qa",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "result",
+                    "isMut": true,
+                    "isSigner": true
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": [
+                {
+                    "name": "studentAnswers",
+                    "type": {
+                        "vec": "string"
+                    }
+                }
+            ]
+        }
+    ],
+    "accounts": [
+        {
+            "name": "User",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "authority",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "role",
+                        "type": {
+                            "defined": "UserRole"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "matricNumber",
+                        "type": {
+                            "option": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Course",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "title",
+                        "type": "string"
+                    },
+                    {
+                        "name": "lecturer",
+                        "type": "publicKey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Exam",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "title",
+                        "type": "string"
+                    },
+                    {
+                        "name": "course",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "date",
+                        "type": "i64"
+                    },
+                    {
+                        "name": "duration",
+                        "type": "i64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "QuestionBank",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "exam",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "questions",
+                        "type": {
+                            "vec": "string"
+                        }
+                    },
+                    {
+                        "name": "answers",
+                        "type": {
+                            "vec": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Enrollment",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "student",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "course",
+                        "type": "publicKey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "ExamOutcome",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "student",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "exam",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "score",
+                        "type": "u8"
+                    }
+                ]
+            }
+        }
+    ],
+    "types": [
+        {
+            "name": "UserRole",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "Lecturer"
+                    },
+                    {
+                        "name": "Student"
+                    }
+                ]
+            }
+        }
+    ],
+    "errors": [
+        {
+            "code": 6000,
+            "name": "EmptyCourseTitle",
+            "msg": "Course title cannot be empty."
+        },
+        {
+            "code": 6001,
+            "name": "InvalidExamDetails",
+            "msg": "Invalid exam details."
+        },
+        {
+            "code": 6002,
+            "name": "InvalidQuestionFormat",
+            "msg": "Questions and answers must be non-empty and of equal length."
+        },
+        {
+            "code": 6003,
+            "name": "AnswerCountMismatch",
+            "msg": "Student answers count does not match question count."
+        },
+        {
+            "code": 6004,
+            "name": "InvalidMatricNumber",
+            "msg": "Matric number exceeds allowed length."
+        }
+    ]
+}
