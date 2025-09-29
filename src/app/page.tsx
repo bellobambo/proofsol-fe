@@ -18,32 +18,32 @@ export default function Home() {
   const [isCheckingUser, setIsCheckingUser] = useState(false);
 
   // Fetch user account to check if registered
-// Update your fetchUserAccount function
-const fetchUserAccount = async () => {
-  if (!program || !publicKey) {
-    setUserAccount(null);
-    return;
-  }
+  // Update your fetchUserAccount function
+  const fetchUserAccount = async () => {
+    if (!program || !publicKey) {
+      setUserAccount(null);
+      return;
+    }
 
-  setIsCheckingUser(true);
-  try {
-    const [userPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("user"), publicKey.toBuffer()],
-      program.programId
-    );
-    
-    // Add a small delay to ensure transaction is confirmed
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const account = await program.account.user.fetch(userPda);
-    setUserAccount(account);
-  } catch (error: any) {
-    console.log("User not registered or account not found:", error.message);
-    setUserAccount(null);
-  } finally {
-    setIsCheckingUser(false);
-  }
-};
+    setIsCheckingUser(true);
+    try {
+      const [userPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user"), publicKey.toBuffer()],
+        program.programId
+      );
+
+      // Add a small delay to ensure transaction is confirmed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const account = await program.account.user.fetch(userPda);
+      setUserAccount(account);
+    } catch (error: any) {
+      console.log("User not registered or account not found:", error.message);
+      setUserAccount(null);
+    } finally {
+      setIsCheckingUser(false);
+    }
+  };
   const fetchCourses = async () => {
     if (!program) return;
     setLoading(true);
@@ -69,26 +69,26 @@ const fetchUserAccount = async () => {
     }
   };
 
- const fetchEnrollments = async () => {
-  if (!program || !publicKey) return;
-  try {
-    const accounts = await program.account.enrollment.all();
-    const userEnrollments = accounts
-      .map((a) => ({ pubkey: a.publicKey, ...a.account }))
-      .filter((e: any) => e.student?.toBase58?.() === publicKey.toBase58()); // Add type annotation
-    setEnrollments(userEnrollments);
-  } catch (e) {
-    console.error("fetchEnrollments", e);
+  const fetchEnrollments = async () => {
+    if (!program || !publicKey) return;
+    try {
+      const accounts = await program.account.enrollment.all();
+      const userEnrollments = accounts
+        .map((a) => ({ pubkey: a.publicKey, ...a.account }))
+        .filter((e: any) => e.student?.toBase58?.() === publicKey.toBase58()); // Add type annotation
+      setEnrollments(userEnrollments);
+    } catch (e) {
+      console.error("fetchEnrollments", e);
+    }
+  };
+
+
+  const handleManualRefresh = async () => {
+    await fetchUserAccount();
+    await fetchCourses();
+    await fetchExams();
+    await fetchEnrollments();
   }
-};
-
-
-const handleManualRefresh = async () => {
-  await fetchUserAccount();
-  await fetchCourses();
-  await fetchExams();
-  await fetchEnrollments();
-}
 
   useEffect(() => {
     if (!program) return;
@@ -112,21 +112,21 @@ const handleManualRefresh = async () => {
       {loading && (
         <div className="text-sm text-blue-500">Loading courses...</div>
       )}
-      
+
       <header className="mb-6">
         <h1 className="text-3xl font-bold">School Assess — Frontend</h1>
         <p className="text-sm text-gray-600">
           Connected wallet: {publicKey?.toBase58() ?? "not connected"}
         </p>
-        
+
         {publicKey && userAccount && (
-  <button
-    onClick={handleManualRefresh}
-    className="ml-2 px-3 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
-  >
-    Refresh ↻
-  </button>
-)}
+          <button
+            onClick={handleManualRefresh}
+            className="ml-2 px-3 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+          >
+            Refresh ↻
+          </button>
+        )}
         {publicKey && (
           <div className="mt-2">
             {isCheckingUser ? (

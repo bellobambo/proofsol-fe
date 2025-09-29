@@ -24,20 +24,25 @@ export default function RegisterUserForm({ onRegistered }: RegisterUserFormProps
     setLoading(true);
 
     try {
-      // Convert role string to enum format expected by the program
       const roleEnum = role === "Student" ? { student: {} } : { lecturer: {} };
-
-      // Handle matricNumber as optional field
       const matricNumberValue =
         role === "Student" && matricNumber.trim() !== ""
           ? matricNumber
           : null;
 
-      // Find the PDA for the user account
       const [userPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("user"), publicKey.toBuffer()],
         program.programId
       );
+
+      // Check if user account already exists
+      const existingAccount = await program.account.user.fetchNullable(userPda);
+      if (existingAccount) {
+        alert("You are already registered! ✅");
+        onRegistered?.();
+        setLoading(false);
+        return;
+      }
 
       console.log("Registering with:", {
         role: roleEnum,
@@ -47,50 +52,51 @@ export default function RegisterUserForm({ onRegistered }: RegisterUserFormProps
         authority: publicKey.toString()
       });
 
-      // Call the registerUser instruction - only the authority needs to sign
+      // Build transaction manually with fresh blockhash
       const tx = await program.methods
         .registerUser(roleEnum, name, matricNumberValue)
         .accounts({
-          user: userPda,  // Use the PDA, not a generated keypair
+          user: userPda,
           authority: publicKey,
           systemProgram: SystemProgram.programId,
         })
-        .rpc();
+        .transaction();
 
-      console.log("Transaction successful:", tx);
-      alert("Registered successfully! ✅");
+      const latestBlockhash = await program.provider.connection.getLatestBlockhash();
+      tx.recentBlockhash = latestBlockhash.blockhash;
+      tx.feePayer = publicKey;
 
-      if (onRegistered) {
-        onRegistered();
+      const provider = program.provider;
+      if (!provider || !provider.sendAndConfirm) {
+        throw new Error("Wallet provider is not available.");
       }
 
-      // Reset form
+      const txSig = await provider.sendAndConfirm(tx, [], {
+        commitment: "confirmed",
+      });
+
+
+      console.log("Transaction confirmed:", txSig);
+      alert("Registered successfully! ✅");
+      onRegistered?.();
+
       setName("");
       setMatricNumber("");
     } catch (err: any) {
       console.error("Registration error:", err);
       console.log("Full error object:", err);
 
-      // Check if it's a "already processed" error which might indicate success
-      if (err.message?.includes('already processed')) {
-        // This might actually be a success case - the transaction went through
+      if (err.message?.includes("already processed")) {
         console.log("Transaction may have succeeded despite error");
         alert("Registration completed! Please refresh the page.");
-
-        if (onRegistered) {
-          onRegistered();
-        }
-      }
-      // Check if it's an account already exists error
-      else if (err.message?.includes('account already exists') ||
-        err.message?.includes('already in use')) {
+        onRegistered?.();
+      } else if (
+        err.message?.includes("account already exists") ||
+        err.message?.includes("already in use")
+      ) {
         alert("You are already registered! ✅");
-
-        if (onRegistered) {
-          onRegistered();
-        }
-      }
-      else if (err.message) {
+        onRegistered?.();
+      } else if (err.message) {
         alert(`Registration failed: ${err.message}`);
       } else if (err.logs) {
         console.log("Program logs:", err.logs);
@@ -102,6 +108,7 @@ export default function RegisterUserForm({ onRegistered }: RegisterUserFormProps
       setLoading(false);
     }
   };
+
 
   return (
     <form onSubmit={handleRegister} className="space-y-4 p-4 max-w-md mx-auto">
